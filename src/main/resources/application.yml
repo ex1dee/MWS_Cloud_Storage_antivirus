@@ -18,8 +18,15 @@ antivirus:
     host: ${CLAMAV_HOST}
     port: ${CLAMAV_PORT}
 
-  fast-scan:
-    tika-read-limit: 8192
+  scan:
+    fast:
+      read-limit: 8192
+
+    full-scan-threshold-mb: 100
+
+  scheduling:
+    signature-update:
+      interval: "PT15M"
 
   s3:
     url: ${S3_URL}

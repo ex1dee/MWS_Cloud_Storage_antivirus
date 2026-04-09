@@ -21,9 +21,18 @@ public class S3Service {
     this.s3Client = s3Client;
   }
 
-  public InputStream getFileStream(String s3Key) {
+  public InputStream getPartialStream(String s3Key, int limit) {
+    return getObjectStream(s3Key, "bytes=0-" + (limit - 1));
+  }
+
+  public InputStream getFullStream(String s3Key) {
+    return getObjectStream(s3Key, null);
+  }
+
+  public InputStream getObjectStream(String s3Key, String range) {
     try {
-      return s3Client.getObject(GetObjectRequest.builder().bucket(bucketName).key(s3Key).build());
+      return s3Client.getObject(
+          GetObjectRequest.builder().bucket(bucketName).range(range).key(s3Key).build());
     } catch (Exception e) {
       throw new DownloadFileException(s3Key, e);
     }
