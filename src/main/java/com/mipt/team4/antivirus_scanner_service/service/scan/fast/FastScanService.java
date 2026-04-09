@@ -1,4 +1,4 @@
-package com.mipt.team4.antivirus_scanner_service.service.fast_scan;
+package com.mipt.team4.antivirus_scanner_service.service.scan.fast;
 
 import com.mipt.team4.antivirus_scanner_service.model.context.ScanContext;
 import com.mipt.team4.antivirus_scanner_service.model.enums.ScanVerdict;

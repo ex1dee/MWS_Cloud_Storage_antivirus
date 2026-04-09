@@ -3,6 +3,8 @@ package com.mipt.team4.antivirus_scanner_service.config;
 import com.mipt.team4.antivirus_scanner_service.config.props.AntivirusProps;
 import java.net.URI;
 import org.apache.tika.Tika;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.Parser;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -21,6 +23,11 @@ public class AntivirusConfig {
   @Bean
   public Tika tika() {
     return new Tika();
+  }
+
+  @Bean
+  public Parser autoDetectParser() {
+    return new AutoDetectParser();
   }
 
   @Bean

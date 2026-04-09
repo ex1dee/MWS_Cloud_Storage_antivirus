@@ -2,7 +2,9 @@ package com.mipt.team4.antivirus_scanner_service.model.context;
 
 import java.io.InputStream;
 import java.util.UUID;
+import lombok.Builder;
 
+@Builder
 public record ScanContext(
     UUID fileId,
     InputStream inputStream,

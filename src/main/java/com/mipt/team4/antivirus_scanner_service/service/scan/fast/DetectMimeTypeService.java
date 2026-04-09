@@ -1,7 +1,7 @@
-package com.mipt.team4.antivirus_scanner_service.service.fast_scan;
+package com.mipt.team4.antivirus_scanner_service.service.scan.fast;
 
 import com.mipt.team4.antivirus_scanner_service.config.props.AntivirusProps;
-import com.mipt.team4.antivirus_scanner_service.exception.tika.TikaDetectException;
+import com.mipt.team4.antivirus_scanner_service.exception.scan.tika.TikaDetectIOException;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,11 +31,12 @@ public class DetectMimeTypeService {
     BufferedInputStream bufferedStream = getBufferedStream(inputStream);
     bufferedStream.mark(tikaReadLimit);
 
+    BoundedInputStream boundedStream = new BoundedInputStream(tikaReadLimit, bufferedStream);
+
     try {
-      BoundedInputStream boundedStream = new BoundedInputStream(tikaReadLimit, bufferedStream);
       return tika.detect(boundedStream, filename);
     } catch (IOException e) {
-      throw new TikaDetectException(filename, e);
+      throw new TikaDetectIOException(filename, e);
     } finally {
       try {
         bufferedStream.reset();
