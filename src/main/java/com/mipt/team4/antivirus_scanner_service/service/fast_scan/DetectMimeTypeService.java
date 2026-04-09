@@ -5,6 +5,7 @@ import com.mipt.team4.antivirus_scanner_service.exception.tika.TikaDetectExcepti
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
 import org.apache.tika.io.BoundedInputStream;
@@ -26,7 +27,7 @@ public class DetectMimeTypeService {
     return tika.detect(filename);
   }
 
-  public String detectByStream(InputStream inputStream, String filename) {
+  public String detectByStream(InputStream inputStream, String filename, UUID fileId) {
     BufferedInputStream bufferedStream = getBufferedStream(inputStream);
     bufferedStream.mark(tikaReadLimit);
 
@@ -39,7 +40,7 @@ public class DetectMimeTypeService {
       try {
         bufferedStream.reset();
       } catch (IOException e) {
-        log.error("Failed to reset stream after Tika detection for file: {}", filename);
+        log.error("Failed to reset stream after Tika detection for file: {}", fileId);
       }
     }
   }

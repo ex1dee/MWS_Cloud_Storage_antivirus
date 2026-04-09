@@ -1,4 +1,4 @@
-package com.mipt.team4.antivirus_scanner_service.service;
+package com.mipt.team4.antivirus_scanner_service.service.cache;
 
 import com.mipt.team4.antivirus_scanner_service.config.props.AntivirusProps;
 import com.mipt.team4.antivirus_scanner_service.model.redis.ScanResultCache;
