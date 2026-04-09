@@ -28,6 +28,6 @@ public class FastScanService {
       return ScanVerdict.CONTENT_MISMATCH;
     }
 
-    return ScanVerdict.UNKNOWN;
+    return ScanVerdict.CLEAN;
   }
 }

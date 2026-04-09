@@ -7,5 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class ScanTaskConsumer {
   @RabbitListener(queues = "${antivirus.queues.tasks")
-  public void handleScanTask(ScanTaskDto task) {}
+  public void handleScanTask(ScanTaskDto task) {
+    // exceptions
+  }
 }

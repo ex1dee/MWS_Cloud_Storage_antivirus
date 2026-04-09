@@ -19,8 +19,8 @@ public class DeepScanService {
 
     try {
       result = clamavClient.scan(ctx.inputStream());
-    } catch (Exception exception) {
-      log.error("Deep scan by ClamAV failed for file {}", ctx.fileId(), exception);
+    } catch (Exception e) {
+      log.error("Deep scan by ClamAV failed for file {}", ctx.fileId(), e);
       return ScanVerdict.UNKNOWN;
     }
 
