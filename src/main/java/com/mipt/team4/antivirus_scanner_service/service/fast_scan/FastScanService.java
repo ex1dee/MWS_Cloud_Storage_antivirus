@@ -1,0 +1,33 @@
+package com.mipt.team4.antivirus_scanner_service.service.fast_scan;
+
+import com.mipt.team4.antivirus_scanner_service.model.context.ScanContext;
+import com.mipt.team4.antivirus_scanner_service.model.enums.ScanResult;
+import com.mipt.team4.antivirus_scanner_service.utils.MimeTypeNormalizer;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class FastScanService {
+  private final DetectMimeTypeService detectMimeTypeService;
+
+  public ScanResult scan(ScanContext ctx) {
+    String originalName = ctx.originalName();
+    String declaredMimeType = MimeTypeNormalizer.normalize(ctx.declaredMimeType());
+
+    String mimeTypeByName =
+        MimeTypeNormalizer.normalize(detectMimeTypeService.detectByName(originalName));
+    if (!mimeTypeByName.equals(declaredMimeType)) {
+      return ScanResult.CONTENT_MISMATCH;
+    }
+
+    String mimeTypeByStream =
+        MimeTypeNormalizer.normalize(
+            detectMimeTypeService.detectByStream(ctx.inputStream(), originalName));
+    if (!mimeTypeByStream.equals(mimeTypeByName)) {
+      return ScanResult.CONTENT_MISMATCH;
+    }
+
+    return ScanResult.UNKNOWN;
+  }
+}

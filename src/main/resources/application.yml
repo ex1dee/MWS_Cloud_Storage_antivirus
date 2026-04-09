@@ -4,3 +4,19 @@ spring:
     port: ${RABBITMQ_PORT}
     username: ${RABBITMQ_USER}
     password: ${RABBITMQ_PASS}
+
+antivirus:
+  redis:
+    prefix: "file:scan:"
+    ttl-hours: 24
+
+  queues:
+    tasks: "scan-tasks"
+    results: "scan-results"
+
+  clamav:
+    host: ${CLAMAV_HOST}
+    port: ${CLAMAV_PORT}
+
+  fast-scan:
+    tika-read-limit: 8192
