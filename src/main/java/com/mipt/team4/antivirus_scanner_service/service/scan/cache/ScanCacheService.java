@@ -4,7 +4,6 @@ import com.mipt.team4.antivirus_scanner_service.config.props.AntivirusProps;
 import com.mipt.team4.antivirus_scanner_service.model.enums.ScanVerdict;
 import com.mipt.team4.antivirus_scanner_service.model.redis.ScanResultCache;
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.Optional;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -31,14 +30,9 @@ public class ScanCacheService {
     return Optional.ofNullable((ScanResultCache) redisTemplate.opsForValue().get(hash));
   }
 
-  public void cacheResult(String hash, long size, ScanVerdict verdict) {
+  public void cacheResult(String hash, ScanVerdict verdict, String signatureVersion) {
     ScanResultCache result =
-        ScanResultCache.builder()
-            .verdict(verdict)
-            .fileSize(size)
-            .signatureVersion(clamavSignatureProvider.getVersion())
-            .createdAt(LocalDateTime.now())
-            .build();
+        ScanResultCache.builder().verdict(verdict).signatureVersion(signatureVersion).build();
 
     redisTemplate.opsForValue().set(cachePrefix + hash, result, cacheTtl);
   }

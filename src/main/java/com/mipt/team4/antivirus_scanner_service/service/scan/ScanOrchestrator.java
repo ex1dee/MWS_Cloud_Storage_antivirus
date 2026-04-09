@@ -7,6 +7,7 @@ import com.mipt.team4.antivirus_scanner_service.model.dto.ScanTaskDto;
 import com.mipt.team4.antivirus_scanner_service.model.enums.ScanVerdict;
 import com.mipt.team4.antivirus_scanner_service.model.redis.ScanResultCache;
 import com.mipt.team4.antivirus_scanner_service.service.s3.S3Service;
+import com.mipt.team4.antivirus_scanner_service.service.scan.cache.ClamavSignatureProvider;
 import com.mipt.team4.antivirus_scanner_service.service.scan.cache.ScanCacheService;
 import com.mipt.team4.antivirus_scanner_service.service.scan.deep.DeepScanService;
 import com.mipt.team4.antivirus_scanner_service.service.scan.fast.FastScanService;
@@ -27,6 +28,7 @@ public class ScanOrchestrator {
   private final StructuralScanService structuralScanService;
   private final DeepScanService deepScanService;
   private final AntivirusProps antivirusProps;
+  private final ClamavSignatureProvider clamavSignatureProvider;
 
   public ScanVerdict scan(ScanTaskDto scanTask) {
     if (scanTask.size() == 0) {
@@ -37,7 +39,12 @@ public class ScanOrchestrator {
   }
 
   private Optional<ScanVerdict> getFromCache(ScanTaskDto scanTask) {
-    return cacheService.getResult(scanTask.hash()).map(ScanResultCache::verdict);
+    Optional<ScanResultCache> cachedResult = cacheService.getResult(scanTask.hash());
+    String currentSignatureVersion = clamavSignatureProvider.getVersion();
+
+    return cachedResult
+        .filter(result -> result.signatureVersion().equals(currentSignatureVersion))
+        .map(ScanResultCache::verdict);
   }
 
   private ScanVerdict performFullScanCycle(ScanTaskDto scanTask) {
@@ -81,7 +88,7 @@ public class ScanOrchestrator {
       ScanVerdict verdict = scanFunction.apply(ctx, inputStream);
 
       if (needCache(stage, ctx.size(), verdict)) {
-        cacheService.cacheResult(ctx.hash(), ctx.size(), verdict);
+        cacheService.cacheResult(ctx.hash(), verdict, clamavSignatureProvider.getVersion());
       }
 
       return verdict;

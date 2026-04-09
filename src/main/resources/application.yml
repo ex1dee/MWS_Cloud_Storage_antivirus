@@ -10,9 +10,18 @@ antivirus:
     prefix: "file:scan:"
     ttl-hours: 24
 
-  queues:
-    tasks: "scan-tasks"
-    results: "scan-results"
+  rabbitmq:
+    exchanges:
+      tasks: "antivirus.tasks.direct"
+      results: "antivirus.results.direct"
+
+    queues:
+      tasks: "antivirus.tasks.queue"
+      results: "antivirus.results.queue"
+
+    routing-keys:
+      tasks: "scan.task.v1"
+      results: "scan.result.v1"
 
   clamav:
     host: ${CLAMAV_HOST}
