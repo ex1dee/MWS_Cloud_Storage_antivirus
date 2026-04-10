@@ -43,7 +43,10 @@ public class ScanOrchestrator {
     String currentSignatureVersion = clamavSignatureProvider.getVersion();
 
     return cachedResult
-        .filter(result -> result.signatureVersion().equals(currentSignatureVersion))
+        .filter(
+            result ->
+                currentSignatureVersion != null
+                    && currentSignatureVersion.equals(result.signatureVersion()))
         .map(ScanResultCache::verdict);
   }
 

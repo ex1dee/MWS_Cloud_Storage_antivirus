@@ -15,7 +15,7 @@ import xyz.capybara.clamav.ClamavClient;
 @RequiredArgsConstructor
 public class ClamavSignatureProvider {
   private final ClamavClient clamavClient;
-  private final AtomicReference<String> version = new AtomicReference<>("pending");
+  private final AtomicReference<String> version = new AtomicReference<>(null);
 
   @EventListener(ApplicationReadyEvent.class)
   @Scheduled(

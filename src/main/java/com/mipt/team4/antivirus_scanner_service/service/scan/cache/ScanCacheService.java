@@ -11,29 +11,30 @@ import org.springframework.stereotype.Service;
 @Service
 public class ScanCacheService {
   private final RedisTemplate<String, Object> redisTemplate;
-  private final ClamavSignatureProvider clamavSignatureProvider;
   private final String cachePrefix;
   private final Duration cacheTtl;
 
-  public ScanCacheService(
-      RedisTemplate<String, Object> redisTemplate,
-      ClamavSignatureProvider clamavSignatureProvider,
-      AntivirusProps props) {
+  public ScanCacheService(RedisTemplate<String, Object> redisTemplate, AntivirusProps props) {
     this.redisTemplate = redisTemplate;
-    this.clamavSignatureProvider = clamavSignatureProvider;
 
     cachePrefix = props.redis().prefix();
     cacheTtl = Duration.ofHours(props.redis().ttlHours());
   }
 
   public Optional<ScanResultCache> getResult(String hash) {
-    return Optional.ofNullable((ScanResultCache) redisTemplate.opsForValue().get(hash));
+    String key = getKey(hash);
+    return Optional.ofNullable((ScanResultCache) redisTemplate.opsForValue().get(key));
   }
 
   public void cacheResult(String hash, ScanVerdict verdict, String signatureVersion) {
     ScanResultCache result =
         ScanResultCache.builder().verdict(verdict).signatureVersion(signatureVersion).build();
 
-    redisTemplate.opsForValue().set(cachePrefix + hash, result, cacheTtl);
+    String key = getKey(hash);
+    redisTemplate.opsForValue().set(key, result, cacheTtl);
+  }
+
+  private String getKey(String hash) {
+    return cachePrefix + hash;
   }
 }
