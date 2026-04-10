@@ -47,6 +47,7 @@ antivirus:
       read-limit: 8192
 
     full-scan-threshold-mb: 100
+    stage-timeout-sec: 90
 
   scheduling:
     signature-update:
@@ -57,6 +58,11 @@ antivirus:
     access-key: ${S3_ACCESS_KEY}
     secret-key: ${S3_SECRET_KEY}
     region: ${S3_REGION}
+    retry-max-attempts: 3
+
+    timeout-sec:
+      call: 60
+      call-attempt: 20
 
     user-data-bucket:
       name: ${S3_BUCKET_NAME}

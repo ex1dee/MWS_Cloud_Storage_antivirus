@@ -19,7 +19,7 @@ public record AntivirusProps(Redis redis, Rabbitmq rabbitmq, Clamav clamav, Scan
 
   public record Clamav(String host, int port) {}
 
-  public record Scan(Fast fast, long fullScanThresholdMb) {
+  public record Scan(Fast fast, long fullScanThresholdMb, int stageTimeoutSec) {
     public record Fast(int readLimit) {}
   }
 
@@ -28,7 +28,11 @@ public record AntivirusProps(Redis redis, Rabbitmq rabbitmq, Clamav clamav, Scan
       String accessKey,
       String secretKey,
       String region,
+      int retryMaxAttempts,
+      TimeoutSec timeoutSec,
       UserDataBucket userDataBucket) {
+    public record TimeoutSec(int call, int callAttempt) {}
+
     public record UserDataBucket(String name) {}
   }
 }

@@ -2,8 +2,11 @@ package com.mipt.team4.antivirus_scanner_service.service.scan;
 
 import com.mipt.team4.antivirus_scanner_service.config.props.AntivirusProps;
 import com.mipt.team4.antivirus_scanner_service.exception.s3.CloseFileStreamException;
+import com.mipt.team4.antivirus_scanner_service.exception.scan.ScanExecutionException;
+import com.mipt.team4.antivirus_scanner_service.exception.scan.ScanStageTimeoutException;
 import com.mipt.team4.antivirus_scanner_service.model.context.ScanContext;
 import com.mipt.team4.antivirus_scanner_service.model.dto.ScanTaskDto;
+import com.mipt.team4.antivirus_scanner_service.model.enums.ScanStage;
 import com.mipt.team4.antivirus_scanner_service.model.enums.ScanVerdict;
 import com.mipt.team4.antivirus_scanner_service.model.redis.ScanResultCache;
 import com.mipt.team4.antivirus_scanner_service.service.s3.S3Service;
@@ -15,6 +18,11 @@ import com.mipt.team4.antivirus_scanner_service.service.scan.structural.Structur
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,6 +37,7 @@ public class ScanOrchestrator {
   private final DeepScanService deepScanService;
   private final AntivirusProps antivirusProps;
   private final ClamavSignatureProvider clamavSignatureProvider;
+  private final ExecutorService scanExecutor;
 
   public ScanVerdict scan(ScanTaskDto scanTask) {
     if (scanTask.size() == 0) {
@@ -56,7 +65,7 @@ public class ScanOrchestrator {
 
     ScanVerdict fastVerdict =
         executeStage(
-            Stage.FAST,
+            ScanStage.FAST,
             ctx,
             () -> s3Service.getPartialStream(scanTask.s3Key(), fastScanReadLimit),
             fastScanService::scan);
@@ -68,7 +77,7 @@ public class ScanOrchestrator {
     if (structuralScanService.isRequired(scanTask.mimeType())) {
       ScanVerdict structVerdict =
           executeStage(
-              Stage.STRUCTURAL,
+              ScanStage.STRUCTURAL,
               ctx,
               () -> s3Service.getFullStream(scanTask.s3Key()),
               structuralScanService::scan);
@@ -79,33 +88,66 @@ public class ScanOrchestrator {
     }
 
     return executeStage(
-        Stage.DEEP, ctx, () -> s3Service.getFullStream(scanTask.s3Key()), deepScanService::scan);
+        ScanStage.DEEP,
+        ctx,
+        () -> s3Service.getFullStream(scanTask.s3Key()),
+        deepScanService::scan);
   }
 
   private ScanVerdict executeStage(
-      Stage stage,
+      ScanStage stage,
       ScanContext ctx,
       Supplier<InputStream> streamSupplier,
       ScanFunction scanFunction) {
-    try (InputStream inputStream = streamSupplier.get()) {
-      ScanVerdict verdict = scanFunction.apply(ctx, inputStream);
+    CompletableFuture<ScanVerdict> scanFuture =
+        getScanFuture(stage, ctx, streamSupplier, scanFunction);
 
-      if (needCache(stage, ctx.size(), verdict)) {
-        cacheService.cacheResult(ctx.hash(), verdict, clamavSignatureProvider.getVersion());
+    try {
+      return scanFuture.get(antivirusProps.scan().stageTimeoutSec(), TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ScanExecutionException(stage, ctx.fileId(), e);
+    } catch (ExecutionException e) {
+      Throwable cause = e.getCause();
+      if (cause instanceof RuntimeException runtimeException) {
+        throw runtimeException;
       }
 
-      return verdict;
-    } catch (IOException e) {
-      throw new CloseFileStreamException(ctx.fileId(), e);
+      throw new ScanExecutionException(stage, ctx.fileId(), e);
+    } catch (TimeoutException e) {
+      scanFuture.cancel(true);
+      throw new ScanStageTimeoutException(stage, ctx.fileId(), e);
     }
   }
 
-  private boolean needCache(Stage stage, long fileSize, ScanVerdict verdict) {
+  private CompletableFuture<ScanVerdict> getScanFuture(
+      ScanStage stage,
+      ScanContext ctx,
+      Supplier<InputStream> streamSupplier,
+      ScanFunction scanFunction) {
+    return CompletableFuture.supplyAsync(
+        () -> {
+          try (InputStream inputStream = streamSupplier.get()) {
+            ScanVerdict verdict = scanFunction.apply(ctx, inputStream);
+
+            if (needCache(stage, ctx.size(), verdict)) {
+              cacheService.cacheResult(ctx.hash(), verdict, clamavSignatureProvider.getVersion());
+            }
+
+            return verdict;
+          } catch (IOException e) {
+            throw new CloseFileStreamException(ctx.fileId(), e);
+          }
+        },
+        scanExecutor);
+  }
+
+  private boolean needCache(ScanStage stage, long fileSize, ScanVerdict verdict) {
     return verdict != ScanVerdict.CLEAN || isStageFinal(stage, fileSize);
   }
 
-  private boolean isStageFinal(Stage stage, long fileSize) {
-    return stage == Stage.DEEP || (stage == Stage.FAST && !isFullScanRequired(fileSize));
+  private boolean isStageFinal(ScanStage stage, long fileSize) {
+    return stage == ScanStage.DEEP || (stage == ScanStage.FAST && !isFullScanRequired(fileSize));
   }
 
   private boolean isFullScanRequired(long fileSize) {
@@ -120,12 +162,6 @@ public class ScanOrchestrator {
         .declaredMimeType(scanTask.mimeType())
         .size(scanTask.size())
         .build();
-  }
-
-  private enum Stage {
-    FAST,
-    STRUCTURAL,
-    DEEP
   }
 
   @FunctionalInterface
