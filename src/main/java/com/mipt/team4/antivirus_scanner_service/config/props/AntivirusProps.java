@@ -6,12 +6,15 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record AntivirusProps(Redis redis, Rabbitmq rabbitmq, Clamav clamav, Scan scan, S3 s3) {
   public record Redis(String prefix, int ttlHours) {}
 
-  public record Rabbitmq(RoutingKeys routingKeys, Exchanges exchanges, Queues queues) {
-    public record RoutingKeys(String tasks, String results) {}
+  public record Rabbitmq(Retry retry, RoutingKeys routingKeys, Exchanges exchanges, Queues queues) {
+    public record Retry(
+        int maxAttempts, long initialInterval, double multiplier, long maxInterval) {}
 
-    public record Exchanges(String tasks, String results) {}
+    public record RoutingKeys(String tasks, String tasksDlq, String results) {}
 
-    public record Queues(String tasks, String results) {}
+    public record Exchanges(String tasks, String tasksDlx, String results) {}
+
+    public record Queues(String tasks, String tasksDlq, String results) {}
   }
 
   public record Clamav(String host, int port) {}

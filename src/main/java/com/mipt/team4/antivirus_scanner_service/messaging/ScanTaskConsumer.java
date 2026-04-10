@@ -16,7 +16,7 @@ public class ScanTaskConsumer {
   private final ScanOrchestrator orchestrator;
   private final ScanResultProducer resultProducer;
 
-  @RabbitListener(queues = "${antivirus.queues.tasks}")
+  @RabbitListener(queues = "${antivirus.rabbitmq.queues.tasks}")
   public void handleScanTask(ScanTaskDto task) {
     try {
       ScanVerdict verdict = orchestrator.scan(task);
@@ -28,5 +28,11 @@ public class ScanTaskConsumer {
       log.error("Fatal error scanning file {}", task.fileId(), e);
       resultProducer.sendError(task.fileId());
     }
+  }
+
+  @RabbitListener(queues = "${antivirus.rabbitmq.queues.tasks-dlq}")
+  public void handleDeadLetter(ScanTaskDto task) {
+    log.error("Message for file {} moved to DLQ after max retries", task.fileId());
+    resultProducer.sendError(task.fileId());
   }
 }

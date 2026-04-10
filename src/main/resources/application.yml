@@ -5,22 +5,37 @@ spring:
     username: ${RABBITMQ_USER}
     password: ${RABBITMQ_PASS}
 
+    listener:
+      simple:
+        concurrency: 24
+        max-concurrency: 24
+        prefetch: 1
+
 antivirus:
   redis:
     prefix: "file:scan:"
     ttl-hours: 24
 
   rabbitmq:
+    retry:
+      max-attempts: 3
+      initial-interval-ms: 1
+      multiplier: 2.0
+      max-interval-ms: 10
+
     exchanges:
       tasks: "antivirus.tasks.direct"
+      tasks-dlx: "antivirus.tasks.dlx"
       results: "antivirus.results.direct"
 
     queues:
       tasks: "antivirus.tasks.queue"
+      tasks-dlq: "antivirus.tasks.dlq"
       results: "antivirus.results.queue"
 
     routing-keys:
       tasks: "scan.task.v1"
+      tasks-dlq: "scan.task.dlq"
       results: "scan.result.v1"
 
   clamav:
