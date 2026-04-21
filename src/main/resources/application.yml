@@ -1,0 +1,68 @@
+spring:
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
+    username: ${RABBITMQ_USER}
+    password: ${RABBITMQ_PASS}
+
+    listener:
+      simple:
+        concurrency: 24
+        max-concurrency: 24
+        prefetch: 1
+
+antivirus:
+  redis:
+    prefix: "file:scan:"
+    ttl-hours: 24
+
+  rabbitmq:
+    retry:
+      max-attempts: 3
+      initial-interval-ms: 1
+      multiplier: 2.0
+      max-interval-ms: 10
+
+    exchanges:
+      tasks: "antivirus.tasks.direct"
+      tasks-dlx: "antivirus.tasks.dlx"
+      results: "antivirus.results.direct"
+
+    queues:
+      tasks: "antivirus.tasks.queue"
+      tasks-dlq: "antivirus.tasks.dlq"
+      results: "antivirus.results.queue"
+
+    routing-keys:
+      tasks: "scan.task.v1"
+      tasks-dlq: "scan.task.dlq"
+      results: "scan.result.v1"
+
+  clamav:
+    host: ${CLAMAV_HOST}
+    port: ${CLAMAV_PORT}
+
+  scan:
+    fast:
+      read-limit: 8192
+
+    full-scan-threshold-mb: 100
+    stage-timeout-sec: 90
+
+  scheduling:
+    signature-update:
+      interval: "PT15M"
+
+  s3:
+    url: ${S3_URL}
+    access-key: ${S3_ACCESS_KEY}
+    secret-key: ${S3_SECRET_KEY}
+    region: ${S3_REGION}
+    retry-max-attempts: 3
+
+    timeout-sec:
+      call: 60
+      call-attempt: 20
+
+    user-data-bucket:
+      name: ${S3_BUCKET_NAME}
