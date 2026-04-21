@@ -32,7 +32,7 @@ public class S3Service {
     return getObjectStream(s3Key, null);
   }
 
-  public InputStream getObjectStream(String s3Key, String range) {
+  private InputStream getObjectStream(String s3Key, String range) {
     try {
       return s3Client.getObject(
           GetObjectRequest.builder().bucket(bucketName).range(range).key(s3Key).build());

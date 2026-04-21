@@ -49,11 +49,6 @@ public class RabbitConfig {
   }
 
   @Bean
-  public Queue resultsQueue(AntivirusProps props) {
-    return QueueBuilder.durable(props.rabbitmq().queues().results()).build();
-  }
-
-  @Bean
   public Binding tasksBinding(Queue tasksQueue, Exchange tasksExchange, AntivirusProps props) {
     return BindingBuilder.bind(tasksQueue)
         .to(tasksExchange)
@@ -67,15 +62,6 @@ public class RabbitConfig {
     return BindingBuilder.bind(deadLetterQueue)
         .to(deadLetterExchange)
         .with(props.rabbitmq().routingKeys().tasksDlq())
-        .noargs();
-  }
-
-  @Bean
-  public Binding resultsBinding(
-      Queue resultsQueue, Exchange resultsExchange, AntivirusProps props) {
-    return BindingBuilder.bind(resultsQueue)
-        .to(resultsExchange)
-        .with(props.rabbitmq().routingKeys().tasks())
         .noargs();
   }
 
