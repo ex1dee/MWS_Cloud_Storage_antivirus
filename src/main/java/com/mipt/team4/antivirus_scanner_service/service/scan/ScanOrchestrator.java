@@ -70,7 +70,7 @@ public class ScanOrchestrator {
             () -> s3Service.getPartialStream(scanTask.s3Key(), fastScanReadLimit),
             fastScanService::scan);
 
-    if (fastVerdict != ScanVerdict.CLEAN) {
+    if (fastVerdict != ScanVerdict.CLEAN || isFullScanNotRequired(ctx.size())) {
       return fastVerdict;
     }
 
@@ -147,10 +147,10 @@ public class ScanOrchestrator {
   }
 
   private boolean isStageFinal(ScanStage stage, long fileSize) {
-    return stage == ScanStage.DEEP || (stage == ScanStage.FAST && !isFullScanRequired(fileSize));
+    return stage == ScanStage.DEEP || (stage == ScanStage.FAST && isFullScanNotRequired(fileSize));
   }
 
-  private boolean isFullScanRequired(long fileSize) {
+  private boolean isFullScanNotRequired(long fileSize) {
     return fileSize > antivirusProps.scan().fullScanThresholdMb();
   }
 
