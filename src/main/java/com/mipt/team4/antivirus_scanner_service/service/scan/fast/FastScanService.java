@@ -5,8 +5,10 @@ import com.mipt.team4.antivirus_scanner_service.model.enums.ScanVerdict;
 import com.mipt.team4.antivirus_scanner_service.utils.MimeTypeNormalizer;
 import java.io.InputStream;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FastScanService {
@@ -14,17 +16,13 @@ public class FastScanService {
 
   public ScanVerdict scan(ScanContext ctx, InputStream inputStream) {
     String originalName = ctx.originalName();
-    String declaredMimeType = MimeTypeNormalizer.normalize(ctx.declaredMimeType());
 
     String mimeTypeByName =
         MimeTypeNormalizer.normalize(detectMimeTypeService.detectByName(originalName));
-    if (!mimeTypeByName.equals(declaredMimeType)) {
-      return ScanVerdict.CONTENT_MISMATCH;
-    }
-
     String mimeTypeByStream =
         MimeTypeNormalizer.normalize(
-            detectMimeTypeService.detectByStream(inputStream, originalName, ctx.fileId()));
+            detectMimeTypeService.detectByStream(inputStream, originalName));
+
     if (!mimeTypeByStream.equals(mimeTypeByName)) {
       return ScanVerdict.CONTENT_MISMATCH;
     }

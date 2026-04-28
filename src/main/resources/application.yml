@@ -13,6 +13,7 @@ spring:
 
 antivirus:
   redis:
+    enabled: true
     prefix: "file:scan:"
     ttl-hours: 24
 
@@ -46,7 +47,7 @@ antivirus:
     fast:
       read-limit: 8192
 
-    full-scan-threshold-mb: 100
+    full-scan-threshold: 104857600 # 10mb
     stage-timeout-sec: 90
 
   scheduling:

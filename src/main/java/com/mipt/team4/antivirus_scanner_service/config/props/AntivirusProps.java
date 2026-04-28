@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "antivirus")
 public record AntivirusProps(Redis redis, Rabbitmq rabbitmq, Clamav clamav, Scan scan, S3 s3) {
-  public record Redis(String prefix, int ttlHours) {}
+  public record Redis(boolean enabled, String prefix, int ttlHours) {}
 
   public record Rabbitmq(Retry retry, RoutingKeys routingKeys, Exchanges exchanges, Queues queues) {
     public record Retry(
@@ -19,7 +19,7 @@ public record AntivirusProps(Redis redis, Rabbitmq rabbitmq, Clamav clamav, Scan
 
   public record Clamav(String host, int port) {}
 
-  public record Scan(Fast fast, long fullScanThresholdMb, int stageTimeoutSec) {
+  public record Scan(Fast fast, long fullScanThreshold, int stageTimeoutSec) {
     public record Fast(int readLimit) {}
   }
 
