@@ -48,6 +48,10 @@ public class ScanOrchestrator {
   }
 
   private Optional<ScanVerdict> getFromCache(ScanTaskDto scanTask) {
+    if (!antivirusProps.redis().enabled()) {
+      return Optional.empty();
+    }
+
     Optional<ScanResultCache> cachedResult = cacheService.getResult(scanTask.hash());
     String currentSignatureVersion = clamavSignatureProvider.getVersion();
 
@@ -143,7 +147,10 @@ public class ScanOrchestrator {
   }
 
   private boolean needCache(ScanStage stage, long fileSize, ScanVerdict verdict) {
-    return verdict != ScanVerdict.CLEAN || isStageFinal(stage, fileSize);
+    return (antivirusProps.redis().enabled()
+            && verdict != ScanVerdict.CLEAN
+            && verdict != ScanVerdict.CONTENT_MISMATCH)
+        || isStageFinal(stage, fileSize);
   }
 
   private boolean isStageFinal(ScanStage stage, long fileSize) {
@@ -151,7 +158,7 @@ public class ScanOrchestrator {
   }
 
   private boolean isFullScanNotRequired(long fileSize) {
-    return fileSize > antivirusProps.scan().fullScanThresholdMb();
+    return fileSize > antivirusProps.scan().fullScanThreshold();
   }
 
   private ScanContext createContext(ScanTaskDto scanTask) {

@@ -14,8 +14,11 @@ import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.retry.AwsRetryStrategy;
+import software.amazon.awssdk.http.SdkHttpConfigurationOption;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.utils.AttributeMap;
 import xyz.capybara.clamav.ClamavClient;
 
 @Configuration
@@ -45,11 +48,19 @@ public class AntivirusConfig {
   public S3Client s3Client(AntivirusProps props) {
     AntivirusProps.S3 s3Props = props.s3();
 
-    AwsBasicCredentials credentials =
-        AwsBasicCredentials.create(s3Props.accessKey(), s3Props.secretKey());
-
     return S3Client.builder()
         .endpointOverride(URI.create(s3Props.url()))
+        .region(Region.of(s3Props.region()))
+        .credentialsProvider(
+            StaticCredentialsProvider.create(
+                AwsBasicCredentials.create(s3Props.accessKey(), s3Props.secretKey())))
+        .forcePathStyle(true)
+        .httpClient(
+            UrlConnectionHttpClient.builder()
+                .buildWithDefaults(
+                    AttributeMap.builder()
+                        .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
+                        .build()))
         .overrideConfiguration(
             conf ->
                 conf.retryStrategy(
@@ -58,9 +69,6 @@ public class AntivirusConfig {
                             .build())
                     .apiCallTimeout(Duration.ofSeconds(s3Props.timeoutSec().call()))
                     .apiCallAttemptTimeout(Duration.ofSeconds(s3Props.timeoutSec().callAttempt())))
-        .region(Region.of(s3Props.region()))
-        .credentialsProvider(StaticCredentialsProvider.create(credentials))
-        .forcePathStyle(true)
         .build();
   }
 }

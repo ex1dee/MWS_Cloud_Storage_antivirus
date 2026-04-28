@@ -4,7 +4,6 @@ import com.mipt.team4.antivirus_scanner_service.config.props.AntivirusProps;
 import com.mipt.team4.antivirus_scanner_service.exception.scan.tika.TikaDetectIOException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
 import org.apache.tika.io.BoundedInputStream;
@@ -26,7 +25,7 @@ public class DetectMimeTypeService {
     return tika.detect(filename);
   }
 
-  public String detectByStream(InputStream inputStream, String filename, UUID fileId) {
+  public String detectByStream(InputStream inputStream, String filename) {
     BoundedInputStream boundedStream = new BoundedInputStream(tikaReadLimit, inputStream);
 
     try {

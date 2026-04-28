@@ -6,6 +6,7 @@ import com.mipt.team4.antivirus_scanner_service.model.context.ScanContext;
 import com.mipt.team4.antivirus_scanner_service.model.enums.ScanVerdict;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -31,7 +32,12 @@ public class StructuralScanService {
     return mimeType.startsWith("application/")
         || mimeType.contains("xml")
         || mimeType.contains("html")
-        || mimeType.endsWith("pdf");
+        || mimeType.endsWith("pdf")
+        || mimeType.contains("zip")
+        || mimeType.contains("rar")
+        || mimeType.contains("tar")
+        || mimeType.contains("7z")
+        || mimeType.contains("compressed");
   }
 
   public ScanVerdict scan(ScanContext ctx, InputStream inputStream) {
@@ -40,7 +46,8 @@ public class StructuralScanService {
     parseContext.set(Parser.class, autoDetectParser);
 
     try {
-      autoDetectParser.parse(inputStream, new DefaultHandler(), metadata, new ParseContext());
+      autoDetectParser.parse(inputStream, new DefaultHandler(), metadata, parseContext);
+      log.info("Tika metadata for {}: {}", ctx.fileId(), Arrays.toString(metadata.names()));
       return ScanVerdict.CLEAN;
     } catch (EncryptedDocumentException e) {
       return ScanVerdict.PASSWORD_PROTECTED;
